@@ -1,3 +1,10 @@
+import {
+  getPeriodRange,
+  getPreviousPeriodLabel,
+  getPreviousPeriodRange,
+  isDateInRange,
+  type PeriodType,
+} from "@/lib/period";
 import type { Transaction } from "@/lib/types";
 
 function formatCurrency(amount: number) {
@@ -29,8 +36,21 @@ function StatRow({
   );
 }
 
-export function SummaryCards({ transactions }: { transactions: Transaction[] }) {
-  const myCardTransactions = transactions.filter(
+export function SummaryCards({
+  transactions,
+  periodType,
+  anchorDate,
+}: {
+  transactions: Transaction[];
+  periodType: PeriodType;
+  anchorDate: Date;
+}) {
+  const currentRange = getPeriodRange(periodType, anchorDate);
+  const periodTransactions = transactions.filter((t) =>
+    isDateInRange(t.date, currentRange)
+  );
+
+  const myCardTransactions = periodTransactions.filter(
     (t) => t.paymentMethod === "my-card"
   );
   const myCardIncome = myCardTransactions
@@ -41,13 +61,31 @@ export function SummaryCards({ transactions }: { transactions: Transaction[] }) 
     .reduce((sum, t) => sum + t.amount, 0);
   const myCardBalance = myCardIncome - myCardExpense;
 
-  const dadCardExpense = transactions
+  const dadCardExpense = periodTransactions
     .filter((t) => t.paymentMethod === "dad-card" && t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalExpense = transactions
+  const totalExpense = periodTransactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
+
+  const previousRange = getPreviousPeriodRange(periodType, anchorDate);
+  const previousDadCardExpense = transactions
+    .filter(
+      (t) =>
+        isDateInRange(t.date, previousRange) &&
+        t.paymentMethod === "dad-card" &&
+        t.type === "expense"
+    )
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const comparisonPercent =
+    previousDadCardExpense > 0
+      ? Math.round(
+          ((dadCardExpense - previousDadCardExpense) / previousDadCardExpense) * 100
+        )
+      : null;
+  const previousLabel = getPreviousPeriodLabel(periodType);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -72,6 +110,22 @@ export function SummaryCards({ transactions }: { transactions: Transaction[] }) 
         <div className="text-2xl font-bold mt-1 text-rose-600">
           {formatCurrency(dadCardExpense)}
         </div>
+        {comparisonPercent !== null && comparisonPercent !== 0 && (
+          <div
+            className={`text-xs mt-1 ${
+              comparisonPercent > 0 ? "text-rose-600" : "text-emerald-600"
+            }`}
+          >
+            {comparisonPercent > 0
+              ? `▲ ${comparisonPercent}% יותר ${previousLabel}`
+              : `▼ ${Math.abs(comparisonPercent)}% פחות ${previousLabel}`}
+          </div>
+        )}
+        {comparisonPercent === 0 && (
+          <div className="text-xs mt-1 text-neutral-500">
+            ללא שינוי לעומת {previousLabel}
+          </div>
+        )}
       </div>
 
       <div className="rounded-xl border border-black/10 dark:border-white/10 p-5 bg-white dark:bg-neutral-900 shadow-sm">

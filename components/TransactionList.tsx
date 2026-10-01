@@ -25,7 +25,7 @@ export function TransactionList({
   if (transactions.length === 0) {
     return (
       <div className="rounded-xl border border-black/10 dark:border-white/10 p-8 text-center text-neutral-500 bg-white dark:bg-neutral-900">
-        עדיין אין תנועות. הוסיפי הכנסה או הוצאה כדי להתחיל.
+        אין תנועות בתקופה הזו.
       </div>
     );
   }
