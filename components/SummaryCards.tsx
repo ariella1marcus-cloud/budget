@@ -1,4 +1,3 @@
-import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/lib/paymentMethods";
 import type { Transaction } from "@/lib/types";
 
 function formatCurrency(amount: number) {
@@ -9,61 +8,78 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-export function SummaryCards({
-  transactions,
-  showBreakdown = false,
+function StatRow({
+  label,
+  value,
+  color,
+  emphasize = false,
 }: {
-  transactions: Transaction[];
-  showBreakdown?: boolean;
+  label: string;
+  value: number;
+  color: string;
+  emphasize?: boolean;
 }) {
-  const income = transactions
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-neutral-500">{label}</span>
+      <span className={`${emphasize ? "font-bold" : "font-semibold"} ${color}`}>
+        {formatCurrency(value)}
+      </span>
+    </div>
+  );
+}
+
+export function SummaryCards({ transactions }: { transactions: Transaction[] }) {
+  const myCardTransactions = transactions.filter(
+    (t) => t.paymentMethod === "my-card"
+  );
+  const myCardIncome = myCardTransactions
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + t.amount, 0);
-  const expense = transactions
+  const myCardExpense = myCardTransactions
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + t.amount, 0);
-  const balance = income - expense;
+  const myCardBalance = myCardIncome - myCardExpense;
 
-  const cards = [
-    { label: "הכנסות", value: income, color: "text-emerald-600" },
-    { label: "הוצאות", value: expense, color: "text-rose-600" },
-    {
-      label: "מאזן",
-      value: balance,
-      color: balance >= 0 ? "text-emerald-600" : "text-rose-600",
-    },
-  ];
+  const dadCardExpense = transactions
+    .filter((t) => t.paymentMethod === "dad-card" && t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpense = transactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + t.amount, 0);
 
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {cards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-xl border border-black/10 dark:border-white/10 p-5 bg-white dark:bg-neutral-900 shadow-sm"
-          >
-            <div className="text-sm text-neutral-500">{card.label}</div>
-            <div className={`text-2xl font-bold mt-1 ${card.color}`}>
-              {formatCurrency(card.value)}
-            </div>
-          </div>
-        ))}
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="rounded-xl border border-black/10 dark:border-white/10 p-5 bg-white dark:bg-neutral-900 shadow-sm space-y-2">
+        <div className="text-sm text-neutral-500 font-medium mb-1">
+          הכרטיס שלי
+        </div>
+        <StatRow label="הכנסות" value={myCardIncome} color="text-emerald-600" />
+        <StatRow label="הוצאות" value={myCardExpense} color="text-rose-600" />
+        <div className="pt-2 border-t border-black/5 dark:border-white/10">
+          <StatRow
+            label="מאזן"
+            value={myCardBalance}
+            color={myCardBalance >= 0 ? "text-emerald-600" : "text-rose-600"}
+            emphasize
+          />
+        </div>
       </div>
 
-      {showBreakdown && (
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-500 px-1">
-          {PAYMENT_METHODS.map((method) => {
-            const methodExpense = transactions
-              .filter((t) => t.type === "expense" && t.paymentMethod === method)
-              .reduce((sum, t) => sum + t.amount, 0);
-            return (
-              <span key={method}>
-                {PAYMENT_METHOD_LABELS[method]}: {formatCurrency(methodExpense)}
-              </span>
-            );
-          })}
+      <div className="rounded-xl border border-black/10 dark:border-white/10 p-5 bg-white dark:bg-neutral-900 shadow-sm">
+        <div className="text-sm text-neutral-500">הכרטיס של אבא</div>
+        <div className="text-2xl font-bold mt-1 text-rose-600">
+          {formatCurrency(dadCardExpense)}
         </div>
-      )}
+      </div>
+
+      <div className="rounded-xl border border-black/10 dark:border-white/10 p-5 bg-white dark:bg-neutral-900 shadow-sm">
+        <div className="text-sm text-neutral-500">סה״כ הוצאות</div>
+        <div className="text-2xl font-bold mt-1 text-rose-600">
+          {formatCurrency(totalExpense)}
+        </div>
+      </div>
     </div>
   );
 }

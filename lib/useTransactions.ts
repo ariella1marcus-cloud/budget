@@ -15,7 +15,10 @@ export function useTransactions() {
       try {
         const parsed: Transaction[] = JSON.parse(raw);
         setTransactions(
-          parsed.map((t) => ({ paymentMethod: "cash", ...t }))
+          parsed.map((t) => ({
+            ...t,
+            paymentMethod: t.paymentMethod === "dad-card" ? "dad-card" : "my-card",
+          }))
         );
       } catch {
         setTransactions([]);

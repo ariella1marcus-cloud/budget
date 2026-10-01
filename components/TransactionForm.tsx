@@ -26,7 +26,13 @@ export function TransactionForm({
   function handleTypeChange(newType: TransactionType) {
     setType(newType);
     setCategory(CATEGORIES[newType][0]);
+    if (newType === "income") {
+      setPaymentMethod("my-card");
+    }
   }
+
+  const availablePaymentMethods =
+    type === "income" ? (["my-card"] as const) : PAYMENT_METHODS;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -138,7 +144,7 @@ export function TransactionForm({
             onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
             className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            {PAYMENT_METHODS.map((m) => (
+            {availablePaymentMethods.map((m) => (
               <option key={m} value={m} className="text-black">
                 {PAYMENT_METHOD_LABELS[m]}
               </option>

@@ -26,12 +26,9 @@ export default function Home() {
 
       {loaded && (
         <>
-          <PaymentMethodFilter value={filter} onChange={setFilter} />
-          <SummaryCards
-            transactions={filteredTransactions}
-            showBreakdown={filter === "all"}
-          />
+          <SummaryCards transactions={transactions} />
           <TransactionForm onAdd={addTransaction} />
+          <PaymentMethodFilter value={filter} onChange={setFilter} />
           <TransactionList
             transactions={filteredTransactions}
             onDelete={deleteTransaction}

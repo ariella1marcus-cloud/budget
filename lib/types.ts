@@ -1,6 +1,6 @@
 export type TransactionType = "income" | "expense";
 
-export type PaymentMethod = "my-card" | "dad-card" | "cash";
+export type PaymentMethod = "my-card" | "dad-card";
 
 export type Transaction = {
   id: string;
