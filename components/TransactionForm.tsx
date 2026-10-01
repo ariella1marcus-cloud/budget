@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { CATEGORIES } from "@/lib/categories";
-import type { Transaction, TransactionType } from "@/lib/types";
+import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/lib/paymentMethods";
+import type { PaymentMethod, Transaction, TransactionType } from "@/lib/types";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -18,6 +19,9 @@ export function TransactionForm({
   const [category, setCategory] = useState(CATEGORIES.expense[0]);
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(today());
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    PAYMENT_METHODS[0]
+  );
 
   function handleTypeChange(newType: TransactionType) {
     setType(newType);
@@ -29,7 +33,14 @@ export function TransactionForm({
     const numericAmount = Number(amount);
     if (!numericAmount || numericAmount <= 0) return;
 
-    onAdd({ type, amount: numericAmount, category, description, date });
+    onAdd({
+      type,
+      amount: numericAmount,
+      category,
+      description,
+      date,
+      paymentMethod,
+    });
     setAmount("");
     setDescription("");
     setDate(today());
@@ -116,6 +127,23 @@ export function TransactionForm({
             required
             className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm text-neutral-500 mb-1">
+            אמצעי תשלום
+          </label>
+          <select
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+            className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            {PAYMENT_METHODS.map((m) => (
+              <option key={m} value={m} className="text-black">
+                {PAYMENT_METHOD_LABELS[m]}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

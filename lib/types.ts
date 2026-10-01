@@ -1,5 +1,7 @@
 export type TransactionType = "income" | "expense";
 
+export type PaymentMethod = "my-card" | "dad-card" | "cash";
+
 export type Transaction = {
   id: string;
   type: TransactionType;
@@ -7,4 +9,5 @@ export type Transaction = {
   category: string;
   description: string;
   date: string; // YYYY-MM-DD
+  paymentMethod: PaymentMethod;
 };

@@ -1,3 +1,4 @@
+import { PAYMENT_METHOD_LABELS } from "@/lib/paymentMethods";
 import type { Transaction } from "@/lib/types";
 
 function formatCurrency(amount: number) {
@@ -42,7 +43,8 @@ export function TransactionList({
               {t.description || t.category}
             </div>
             <div className="text-sm text-neutral-500">
-              {t.category} · {formatDate(t.date)}
+              {t.category} · {PAYMENT_METHOD_LABELS[t.paymentMethod]} ·{" "}
+              {formatDate(t.date)}
             </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">

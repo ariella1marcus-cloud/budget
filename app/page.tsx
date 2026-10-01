@@ -1,5 +1,10 @@
 "use client";
 
+import { useState } from "react";
+import {
+  PaymentMethodFilter,
+  type PaymentMethodOrAll,
+} from "@/components/PaymentMethodFilter";
 import { SummaryCards } from "@/components/SummaryCards";
 import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
@@ -8,6 +13,12 @@ import { useTransactions } from "@/lib/useTransactions";
 export default function Home() {
   const { transactions, addTransaction, deleteTransaction, loaded } =
     useTransactions();
+  const [filter, setFilter] = useState<PaymentMethodOrAll>("all");
+
+  const filteredTransactions =
+    filter === "all"
+      ? transactions
+      : transactions.filter((t) => t.paymentMethod === filter);
 
   return (
     <main className="max-w-3xl w-full mx-auto px-4 py-10 space-y-6">
@@ -15,10 +26,14 @@ export default function Home() {
 
       {loaded && (
         <>
-          <SummaryCards transactions={transactions} />
+          <PaymentMethodFilter value={filter} onChange={setFilter} />
+          <SummaryCards
+            transactions={filteredTransactions}
+            showBreakdown={filter === "all"}
+          />
           <TransactionForm onAdd={addTransaction} />
           <TransactionList
-            transactions={transactions}
+            transactions={filteredTransactions}
             onDelete={deleteTransaction}
           />
         </>

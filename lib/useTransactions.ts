@@ -13,7 +13,10 @@ export function useTransactions() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try {
-        setTransactions(JSON.parse(raw));
+        const parsed: Transaction[] = JSON.parse(raw);
+        setTransactions(
+          parsed.map((t) => ({ paymentMethod: "cash", ...t }))
+        );
       } catch {
         setTransactions([]);
       }
