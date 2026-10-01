@@ -1,31 +1,36 @@
 "use client";
 
 import { useState } from "react";
-import { CATEGORIES } from "@/lib/categories";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/lib/paymentMethods";
-import type { PaymentMethod, Transaction, TransactionType } from "@/lib/types";
+import type { Category, PaymentMethod, Transaction, TransactionType } from "@/lib/types";
 
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
 export function TransactionForm({
+  categories,
   onAdd,
 }: {
+  categories: Category[];
   onAdd: (transaction: Omit<Transaction, "id">) => void;
 }) {
   const [type, setType] = useState<TransactionType>("expense");
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState(CATEGORIES.expense[0]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(today());
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
     PAYMENT_METHODS[0]
   );
 
+  const categoriesForType = categories.filter((c) => c.type === type);
+  const categoryId = categoriesForType.some((c) => c.id === selectedCategoryId)
+    ? selectedCategoryId
+    : (categoriesForType[0]?.id ?? "");
+
   function handleTypeChange(newType: TransactionType) {
     setType(newType);
-    setCategory(CATEGORIES[newType][0]);
     if (newType === "income") {
       setPaymentMethod("my-card");
     }
@@ -37,12 +42,12 @@ export function TransactionForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const numericAmount = Number(amount);
-    if (!numericAmount || numericAmount <= 0) return;
+    if (!numericAmount || numericAmount <= 0 || !categoryId) return;
 
     onAdd({
       type,
       amount: numericAmount,
-      category,
+      categoryId,
       description,
       date,
       paymentMethod,
@@ -100,17 +105,23 @@ export function TransactionForm({
 
         <div>
           <label className="block text-sm text-neutral-500 mb-1">קטגוריה</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {CATEGORIES[type].map((c) => (
-              <option key={c} value={c} className="text-black">
-                {c}
-              </option>
-            ))}
-          </select>
+          {categoriesForType.length > 0 ? (
+            <select
+              value={categoryId}
+              onChange={(e) => setSelectedCategoryId(e.target.value)}
+              className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-transparent px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {categoriesForType.map((c) => (
+                <option key={c.id} value={c.id} className="text-black">
+                  {c.emoji} {c.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="text-sm text-neutral-500 py-2">
+              אין עדיין קטגוריות - הוסיפי אחת במסך הקטגוריות
+            </div>
+          )}
         </div>
 
         <div>
@@ -155,7 +166,8 @@ export function TransactionForm({
 
       <button
         type="submit"
-        className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 transition"
+        disabled={!categoryId}
+        className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 transition disabled:opacity-50"
       >
         הוספה
       </button>

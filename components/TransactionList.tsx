@@ -1,5 +1,6 @@
+import { CategoryBadge } from "@/components/CategoryBadge";
 import { PAYMENT_METHOD_LABELS } from "@/lib/paymentMethods";
-import type { Transaction } from "@/lib/types";
+import type { Category, Transaction } from "@/lib/types";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("he-IL", {
@@ -17,9 +18,11 @@ function formatDate(date: string) {
 
 export function TransactionList({
   transactions,
+  categories,
   onDelete,
 }: {
   transactions: Transaction[];
+  categories: Category[];
   onDelete: (id: string) => void;
 }) {
   if (transactions.length === 0) {
@@ -36,36 +39,44 @@ export function TransactionList({
 
   return (
     <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-neutral-900 shadow-sm divide-y divide-black/5 dark:divide-white/10 overflow-hidden">
-      {sorted.map((t) => (
-        <div key={t.id} className="flex items-center justify-between gap-3 px-5 py-3">
-          <div className="min-w-0">
-            <div className="font-medium truncate">
-              {t.description || t.category}
+      {sorted.map((t) => {
+        const category = categories.find((c) => c.id === t.categoryId);
+        return (
+          <div
+            key={t.id}
+            className="flex items-center justify-between gap-3 px-5 py-3"
+          >
+            <div className="min-w-0 space-y-1">
+              <div className="font-medium truncate">
+                {t.description || category?.name}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap text-sm text-neutral-500">
+                {category && <CategoryBadge category={category} />}
+                <span>
+                  {PAYMENT_METHOD_LABELS[t.paymentMethod]} · {formatDate(t.date)}
+                </span>
+              </div>
             </div>
-            <div className="text-sm text-neutral-500">
-              {t.category} · {PAYMENT_METHOD_LABELS[t.paymentMethod]} ·{" "}
-              {formatDate(t.date)}
+            <div className="flex items-center gap-3 shrink-0">
+              <span
+                className={`font-semibold ${
+                  t.type === "income" ? "text-emerald-600" : "text-rose-600"
+                }`}
+              >
+                {t.type === "income" ? "+" : "-"}
+                {formatCurrency(t.amount)}
+              </span>
+              <button
+                onClick={() => onDelete(t.id)}
+                aria-label="מחיקת תנועה"
+                className="text-neutral-400 hover:text-rose-600 transition text-sm"
+              >
+                מחיקה
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <span
-              className={`font-semibold ${
-                t.type === "income" ? "text-emerald-600" : "text-rose-600"
-              }`}
-            >
-              {t.type === "income" ? "+" : "-"}
-              {formatCurrency(t.amount)}
-            </span>
-            <button
-              onClick={() => onDelete(t.id)}
-              aria-label="מחיקת תנועה"
-              className="text-neutral-400 hover:text-rose-600 transition text-sm"
-            >
-              מחיקה
-            </button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

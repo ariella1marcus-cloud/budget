@@ -8,7 +8,7 @@ type DbTransactionRow = {
   id: string;
   type: Transaction["type"];
   amount: number;
-  category: string;
+  category_id: string;
   description: string | null;
   date: string;
   payment_method: Transaction["paymentMethod"];
@@ -19,7 +19,7 @@ function fromRow(row: DbTransactionRow): Transaction {
     id: row.id,
     type: row.type,
     amount: row.amount,
-    category: row.category,
+    categoryId: row.category_id,
     description: row.description ?? "",
     date: row.date,
     paymentMethod: row.payment_method,
@@ -56,7 +56,7 @@ export function useTransactions() {
       .insert({
         type: transaction.type,
         amount: transaction.amount,
-        category: transaction.category,
+        category_id: transaction.categoryId,
         description: transaction.description,
         date: transaction.date,
         payment_method: transaction.paymentMethod,

@@ -16,11 +16,13 @@ import {
   isDateInRange,
   type PeriodType,
 } from "@/lib/period";
+import { useCategories } from "@/lib/useCategories";
 import { useTransactions } from "@/lib/useTransactions";
 
 export function BudgetApp() {
   const { transactions, addTransaction, deleteTransaction, loaded } =
     useTransactions();
+  const { categories, loaded: categoriesLoaded } = useCategories();
   const [filter, setFilter] = useState<PaymentMethodOrAll>("all");
   const [periodType, setPeriodType] = useState<PeriodType>("month");
   const [anchorDate, setAnchorDate] = useState(() => new Date());
@@ -41,7 +43,7 @@ export function BudgetApp() {
       ? periodTransactions
       : periodTransactions.filter((t) => t.paymentMethod === filter);
 
-  if (!loaded) {
+  if (!loaded || !categoriesLoaded) {
     return null;
   }
 
@@ -62,10 +64,11 @@ export function BudgetApp() {
         periodType={periodType}
         anchorDate={anchorDate}
       />
-      <TransactionForm onAdd={addTransaction} />
+      <TransactionForm categories={categories} onAdd={addTransaction} />
       <PaymentMethodFilter value={filter} onChange={setFilter} />
       <TransactionList
         transactions={visibleTransactions}
+        categories={categories}
         onDelete={deleteTransaction}
       />
     </>
