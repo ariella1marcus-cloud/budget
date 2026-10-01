@@ -1,5 +1,6 @@
 "use client";
 
+import { BudgetApp } from "@/components/BudgetApp";
 import { LoginScreen } from "@/components/LoginScreen";
 import { useAuth } from "@/lib/useAuth";
 
@@ -29,9 +30,7 @@ export default function Home() {
           onSendMagicLink={(email) => signInWithMagicLink(email)}
         />
       ) : (
-        <div className="rounded-xl border border-black/10 dark:border-white/10 p-8 text-center text-neutral-500 bg-white dark:bg-neutral-900">
-          מחוברת בהצלחה! בשלב הבא נחבר כאן את נתוני התקציב.
-        </div>
+        <BudgetApp />
       )}
     </main>
   );

@@ -1,47 +1,77 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "./supabaseClient";
 import type { Transaction } from "./types";
 
-const STORAGE_KEY = "budget-transactions";
+type DbTransactionRow = {
+  id: string;
+  type: Transaction["type"];
+  amount: number;
+  category: string;
+  description: string | null;
+  date: string;
+  payment_method: Transaction["paymentMethod"];
+};
+
+function fromRow(row: DbTransactionRow): Transaction {
+  return {
+    id: row.id,
+    type: row.type,
+    amount: row.amount,
+    category: row.category,
+    description: row.description ?? "",
+    date: row.date,
+    paymentMethod: row.payment_method,
+  };
+}
 
 export function useTransactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        const parsed: Transaction[] = JSON.parse(raw);
-        setTransactions(
-          parsed.map((t) => ({
-            ...t,
-            paymentMethod: t.paymentMethod === "dad-card" ? "dad-card" : "my-card",
-          }))
-        );
-      } catch {
-        setTransactions([]);
-      }
-    }
-    setLoaded(true);
+    let active = true;
+
+    supabase
+      .from("transactions")
+      .select("*")
+      .order("date", { ascending: false })
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (!error && data) {
+          setTransactions(data.map(fromRow));
+        }
+        setLoaded(true);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  useEffect(() => {
-    if (loaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-    }
-  }, [transactions, loaded]);
+  async function addTransaction(transaction: Omit<Transaction, "id">) {
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert({
+        type: transaction.type,
+        amount: transaction.amount,
+        category: transaction.category,
+        description: transaction.description,
+        date: transaction.date,
+        payment_method: transaction.paymentMethod,
+      })
+      .select()
+      .single();
 
-  function addTransaction(transaction: Omit<Transaction, "id">) {
-    setTransactions((prev) => [
-      { ...transaction, id: crypto.randomUUID() },
-      ...prev,
-    ]);
+    if (!error && data) {
+      setTransactions((prev) => [fromRow(data), ...prev]);
+    }
   }
 
-  function deleteTransaction(id: string) {
+  async function deleteTransaction(id: string) {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
+    await supabase.from("transactions").delete().eq("id", id);
   }
 
   return { transactions, addTransaction, deleteTransaction, loaded };
