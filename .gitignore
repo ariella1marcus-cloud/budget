@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# original licensed font source files (converted copies live in app/fonts/)
+/yarden_font
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
