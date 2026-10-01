@@ -6,7 +6,7 @@ import { NavBar } from "@/components/NavBar";
 import { useAuth } from "@/lib/useAuth";
 
 export default function Home() {
-  const { user, loading, signInWithMagicLink, signOut } = useAuth();
+  const { user, loading, signIn, signOut } = useAuth();
 
   if (loading) {
     return null;
@@ -17,14 +17,12 @@ export default function Home() {
       {user ? (
         <>
           <NavBar userEmail={user.email} onSignOut={signOut} />
-          <BudgetApp />
+          <BudgetApp userId={user.userId} />
         </>
       ) : (
         <>
           <h1 className="text-3xl font-bold text-center">התקציב שלי</h1>
-          <LoginScreen
-            onSendMagicLink={(email) => signInWithMagicLink(email)}
-          />
+          <LoginScreen onSignIn={signIn} />
         </>
       )}
     </main>

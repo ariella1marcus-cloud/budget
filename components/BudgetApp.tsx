@@ -19,10 +19,10 @@ import {
 import { useCategories } from "@/lib/useCategories";
 import { useTransactions } from "@/lib/useTransactions";
 
-export function BudgetApp() {
+export function BudgetApp({ userId }: { userId: string }) {
   const { transactions, addTransaction, deleteTransaction, loaded } =
-    useTransactions();
-  const { categories, loaded: categoriesLoaded } = useCategories();
+    useTransactions(userId);
+  const { categories, loaded: categoriesLoaded } = useCategories(userId);
   const [filter, setFilter] = useState<PaymentMethodOrAll>("all");
   const [periodType, setPeriodType] = useState<PeriodType>("month");
   const [anchorDate, setAnchorDate] = useState(() => new Date());

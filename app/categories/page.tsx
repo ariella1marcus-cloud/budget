@@ -120,7 +120,7 @@ function CategorySection({
 }
 
 export default function CategoriesPage() {
-  const { user, loading, signInWithMagicLink, signOut } = useAuth();
+  const { user, loading, signIn, signOut } = useAuth();
   const {
     categories,
     loaded,
@@ -128,7 +128,7 @@ export default function CategoriesPage() {
     renameCategory,
     updateCategoryAppearance,
     deleteCategory,
-  } = useCategories();
+  } = useCategories(user?.userId);
 
   if (loading) {
     return null;
@@ -165,9 +165,7 @@ export default function CategoriesPage() {
       ) : (
         <>
           <h1 className="text-3xl font-bold text-center">התקציב שלי</h1>
-          <LoginScreen
-            onSendMagicLink={(email) => signInWithMagicLink(email)}
-          />
+          <LoginScreen onSignIn={signIn} />
         </>
       )}
     </main>

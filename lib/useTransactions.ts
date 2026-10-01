@@ -1,77 +1,48 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { supabase } from "./supabaseClient";
+import { api } from "@appdeploy/client";
 import type { Transaction } from "./types";
 
-type DbTransactionRow = {
-  id: string;
-  type: Transaction["type"];
-  amount: number;
-  category_id: string;
-  description: string | null;
-  date: string;
-  payment_method: Transaction["paymentMethod"];
-};
-
-function fromRow(row: DbTransactionRow): Transaction {
-  return {
-    id: row.id,
-    type: row.type,
-    amount: row.amount,
-    categoryId: row.category_id,
-    description: row.description ?? "",
-    date: row.date,
-    paymentMethod: row.payment_method,
-  };
-}
-
-export function useTransactions() {
+export function useTransactions(userId?: string) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    if (!userId) return;
     let active = true;
 
-    supabase
-      .from("transactions")
-      .select("*")
-      .order("date", { ascending: false })
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (!error && data) {
-          setTransactions(data.map(fromRow));
-        }
-        setLoaded(true);
+    api
+      .get("/api/transactions")
+      .then(({ data }) => {
+        if (active) setTransactions(data as Transaction[]);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoaded(true);
       });
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [userId]);
 
   async function addTransaction(transaction: Omit<Transaction, "id">) {
-    const { data, error } = await supabase
-      .from("transactions")
-      .insert({
-        type: transaction.type,
-        amount: transaction.amount,
-        category_id: transaction.categoryId,
-        description: transaction.description,
-        date: transaction.date,
-        payment_method: transaction.paymentMethod,
-      })
-      .select()
-      .single();
-
-    if (!error && data) {
-      setTransactions((prev) => [fromRow(data), ...prev]);
+    try {
+      const { data } = await api.post("/api/transactions", transaction);
+      setTransactions((prev) => [data as Transaction, ...prev]);
+    } catch {
+      // the transaction was not saved; leave the list unchanged
     }
   }
 
   async function deleteTransaction(id: string) {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
-    await supabase.from("transactions").delete().eq("id", id);
+    try {
+      await api.delete(`/api/transactions/${id}`);
+    } catch {
+      // best effort, matching the previous optimistic behaviour
+    }
   }
 
   return { transactions, addTransaction, deleteTransaction, loaded };

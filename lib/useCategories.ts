@@ -1,40 +1,43 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { api } from "@appdeploy/client";
 import type { CategoryColor } from "./categoryColors";
 import {
   planCategoryDeletion,
   validateCategoryName,
   type DeletionPlan,
 } from "./categoryOperations";
-import { supabase } from "./supabaseClient";
-import type { Category, TransactionType } from "./types";
+import type { Category, Transaction, TransactionType } from "./types";
 
-const UNIQUE_VIOLATION = "23505";
+function errorMessage(err: unknown, fallback: string): string {
+  const message = (err as { response?: { data?: { error?: string } } })?.response
+    ?.data?.error;
+  return message ?? fallback;
+}
 
-export function useCategories() {
+export function useCategories(userId?: string) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    if (!userId) return;
     let active = true;
 
-    supabase
-      .from("categories")
-      .select("*")
-      .order("created_at", { ascending: true })
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (!error && data) {
-          setCategories(data as Category[]);
-        }
-        setLoaded(true);
+    api
+      .get("/api/categories")
+      .then(({ data }) => {
+        if (active) setCategories(data as Category[]);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoaded(true);
       });
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [userId]);
 
   function namesForType(type: TransactionType, excludeId?: string) {
     return categories
@@ -53,27 +56,20 @@ export function useCategories() {
       return { error: validation.error };
     }
 
-    const { data, error } = await supabase
-      .from("categories")
-      .insert({
+    let created: Category;
+    try {
+      const { data } = await api.post("/api/categories", {
         type: input.type,
         name: input.name.trim(),
         emoji: input.emoji,
         color: input.color,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return {
-        error:
-          error.code === UNIQUE_VIOLATION
-            ? `כבר קיימת קטגוריה בשם "${input.name.trim()}"`
-            : "לא ניתן היה ליצור את הקטגוריה",
-      };
+      });
+      created = data as Category;
+    } catch (err) {
+      return { error: errorMessage(err, "לא ניתן היה ליצור את הקטגוריה") };
     }
 
-    setCategories((prev) => [...prev, data as Category]);
+    setCategories((prev) => [...prev, created]);
     return {};
   }
 
@@ -93,18 +89,10 @@ export function useCategories() {
     }
 
     const trimmed = newName.trim();
-    const { error } = await supabase
-      .from("categories")
-      .update({ name: trimmed })
-      .eq("id", id);
-
-    if (error) {
-      return {
-        error:
-          error.code === UNIQUE_VIOLATION
-            ? `כבר קיימת קטגוריה בשם "${trimmed}"`
-            : "לא ניתן היה לשנות את השם",
-      };
+    try {
+      await api.put(`/api/categories/${id}`, { name: trimmed });
+    } catch (err) {
+      return { error: errorMessage(err, "לא ניתן היה לשנות את השם") };
     }
 
     setCategories((prev) =>
@@ -117,9 +105,10 @@ export function useCategories() {
     id: string,
     changes: { emoji?: string; color?: CategoryColor }
   ): Promise<{ error?: string }> {
-    const { error } = await supabase.from("categories").update(changes).eq("id", id);
-    if (error) {
-      return { error: "לא ניתן היה לעדכן את הקטגוריה" };
+    try {
+      await api.put(`/api/categories/${id}`, changes);
+    } catch (err) {
+      return { error: errorMessage(err, "לא ניתן היה לעדכן את הקטגוריה") };
     }
     setCategories((prev) =>
       prev.map((c) => (c.id === id ? { ...c, ...changes } : c))
@@ -128,11 +117,12 @@ export function useCategories() {
   }
 
   async function countTransactionsInCategory(id: string): Promise<number> {
-    const { count } = await supabase
-      .from("transactions")
-      .select("id", { count: "exact", head: true })
-      .eq("category_id", id);
-    return count ?? 0;
+    try {
+      const { data } = await api.get("/api/transactions");
+      return (data as Transaction[]).filter((t) => t.categoryId === id).length;
+    } catch {
+      return 0;
+    }
   }
 
   async function deleteCategory(
@@ -142,16 +132,16 @@ export function useCategories() {
     const transactionCount = await countTransactionsInCategory(id);
     const plan = planCategoryDeletion(id, transactionCount, reassignToId);
 
-    if (plan.action === "reassign-and-delete") {
-      await supabase
-        .from("transactions")
-        .update({ category_id: plan.reassignToId })
-        .eq("category_id", id);
-    }
-
     if (plan.action === "delete" || plan.action === "reassign-and-delete") {
-      await supabase.from("categories").delete().eq("id", id);
-      setCategories((prev) => prev.filter((c) => c.id !== id));
+      try {
+        await api.post(`/api/categories/${id}/delete`, {
+          reassignToId:
+            plan.action === "reassign-and-delete" ? plan.reassignToId : undefined,
+        });
+        setCategories((prev) => prev.filter((c) => c.id !== id));
+      } catch {
+        return { action: "invalid", error: "לא ניתן היה למחוק את הקטגוריה" };
+      }
     }
 
     return plan;
