@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "/Users/ariellamarcus/אתר תקציב/.claude/dev.sh",
+      "runtimeExecutable": "/Users/ariellamarcus/budget/.claude/dev.sh",
       "runtimeArgs": [],
       "port": 3000
     }

@@ -15,6 +15,7 @@ export function NavBar({
   const links = [
     { href: "/", label: "הבית" },
     { href: "/categories", label: "קטגוריות" },
+    { href: "/wishlist", label: "משאלות" },
   ];
 
   return (
